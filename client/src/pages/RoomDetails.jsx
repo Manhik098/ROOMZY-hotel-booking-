@@ -1,23 +1,93 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import {
-  assets,
-  facilityIcons,
-  roomCommonData,
-  roomsDummyData,
-} from "../assets/assets";
+import { assets, facilityIcons, roomCommonData } from "../assets/assets";
 import StarRating from "../components/StarRating";
+import { useAppContext } from "../context/AppContext";
+import toast from "react-hot-toast";
 
 const RoomDetails = () => {
   const { id } = useParams();
-  const [room, setroom] = useState(null);
+  const { rooms, getToken, axios, navigate } = useAppContext();
+
+  const [room, setRoom] = useState(null);
   const [mainImage, setMainImage] = useState(null);
+  const [checkInDate, setCheckInDate] = useState(null);
+  const [checkOutDate, setCheckOutDate] = useState(null);
+  const [guests, setGuests] = useState(1);
+  const [isAvailable, setIsAvailable] = useState(false);
+
+  // Check if the Room is Available
+  const checkAvailability = async () => {
+    try {
+      // Check if Check-In Date is greater than Check-Out Date
+      if (checkInDate >= checkOutDate) {
+        toast.error("Check-In Date should be less than Check-Out Date");
+        return;
+      }
+
+      const { data } = await axios.post("/api/bookings/check-availability", {
+        room: id,
+        checkInDate,
+        checkOutDate,
+      });
+
+      if (data.success) {
+        if (data.isAvailable) {
+          setIsAvailable(true);
+          toast.success("Room is available");
+        } else {
+          setIsAvailable(false);
+          toast.error("Room is not available");
+        }
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      toast.error(error.message);
+    }
+  };
+
+  // onSubmitHandler function to check availability & book the room
+  const onSubmitHandler = async (e) => {
+    try {
+      e.preventDefault();
+      if (!isAvailable) {
+        return checkAvailability();
+      } else {
+        const { data } = await axios.post(
+          "/api/bookings/book",
+          {
+            room: id,
+            checkInDate,
+            checkOutDate,
+            guests,
+            paymentMethod: "Pay At Hotel",
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${await getToken()}`,
+            },
+          }
+        );
+
+        if (data.success) {
+          toast.success(data.message);
+          navigate("/my-bookings");
+          scrollTo(0, 0);
+        } else {
+          toast.error(data.message);
+        }
+      }
+    } catch (error) {
+      toast.error(error.message);
+    }
+  };
 
   useEffect(() => {
-    const room = roomsDummyData.find((room) => room._id === id);
-    room && setroom(room);
+    const room = rooms.find((room) => room._id === id);
+    room && setRoom(room);
     room && setMainImage(room.images[0]);
-  }, []);
+  }, [rooms]);
 
   return (
     room && (
@@ -97,13 +167,18 @@ const RoomDetails = () => {
         </div>
 
         {/* Chech-in Check-out Form */}
-        <form class="flex flex-col md:flex-row items-start md:items-center justify-between bg-white shadow-[0px_0px_20px_rgba(0,0,0,0.15)] p-6 rounded-xl mx-auto mt-16 max-w-6xl">
+        <form
+          onSubmit={onSubmitHandler}
+          class="flex flex-col md:flex-row items-start md:items-center justify-between bg-white shadow-[0px_0px_20px_rgba(0,0,0,0.15)] p-6 rounded-xl mx-auto mt-16 max-w-6xl"
+        >
           <div class="flex flex-col flex-wrap md:flex-row items-start md:items-center gap-4 md:gap-10 text-gray-500">
             <div class="flex flex-col">
               <label htmlFor="checkInDate" class="font-medium">
                 Check-In
               </label>
               <input
+                onChange={(e) => setCheckInDate(e.target.value)}
+                min={new Date().toISOString().split("T")[0]}
                 id="checkInDate"
                 class="w-full rounded border border-gray-300 px-3 py-2 mt-1.5 outline-none"
                 placeholder="Check-In"
@@ -118,6 +193,9 @@ const RoomDetails = () => {
                 Check-Out
               </label>
               <input
+                onChange={(e) => setCheckOutDate(e.target.value)}
+                min={checkInDate}
+                disabled={!checkInDate}
                 id="checkOutDate"
                 class="w-full rounded border border-gray-300 px-3 py-2 mt-1.5 outline-none"
                 placeholder="Check-Out"
@@ -132,11 +210,12 @@ const RoomDetails = () => {
               </label>
               <input
                 id="guests"
+                onChange={(e) => setGuests(e.target.value)}
+                value={guests}
                 class="max-w-20 rounded border border-gray-300 px-3 py-2 mt-1.5 outline-none"
-                placeholder="0"
+                placeholder="1"
                 required
                 type="number"
-                value="1"
               />
             </div>
           </div>
@@ -144,7 +223,7 @@ const RoomDetails = () => {
             type="submit"
             class="bg-primary hover:bg-primary-dull active:scale-95 transition-all text-white rounded-md max-md:w-full max-md:mt-6 md:px-25 py-3 md:py-4 text-base cursor-pointer"
           >
-            Check Availability
+            {isAvailable ? "Book Now" : "Check Availability"}
           </button>
         </form>
 
@@ -179,18 +258,25 @@ const RoomDetails = () => {
 
         {/*Hosted By:- */}
         <div class="flex flex-col items-start gap-4">
-            <div class="flex gap-4">
-                <img class="h-14 w-14 md:h-18 md:w-18 rounded-full" alt="Host" src={room.hotel.owner.image}/>
-                <div>
-                    <p class="text-lg md:text-xl">Hosted by {room.hotel.name}</p>
-                    <div class="flex items-center mt-1">
-                        <StarRating/>
-                        <p class="ml-2">200+ reviews</p>
-                    </div>
-                </div>
+          <div class="flex gap-4">
+            <img
+              class="h-14 w-14 md:h-18 md:w-18 rounded-full"
+              alt="Host"
+              src={room.hotel.owner.image}
+            />
+            <div>
+              <p class="text-lg md:text-xl">Hosted by {room.hotel.name}</p>
+              <div class="flex items-center mt-1">
+                <StarRating />
+                <p class="ml-2">200+ reviews</p>
+              </div>
             </div>
-            
-            <button class="px-6 py-2.5 mt-4 rounded text-white bg-primary hover:bg-primary-dull transition-all cursor-pointer" >Contact Now</button></div>
+          </div>
+
+          <button class="px-6 py-2.5 mt-4 rounded text-white bg-primary hover:bg-primary-dull transition-all cursor-pointer">
+            Contact Now
+          </button>
+        </div>
       </div>
     )
   );
