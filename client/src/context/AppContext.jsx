@@ -32,18 +32,23 @@ export const AppProvider = ({ children }) => {
   const fetchRooms = async () => {
   try {
     const token = await getToken();
+    console.log("👉 Token:", token); // ✅ Add this
+
     const { data } = await axios.get("/api/rooms", {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: {
+        Authorization: `Bearer ${token}`, // ✅ Add only if token exists
+      },
+      withCredentials: true,
     });
-    if (data.success) {
-      setRooms(data.rooms)
-    } else {
-      toast.error(data.message)
-    }
+
+    console.log("✅ Got rooms:", data);
+    setRooms(data.rooms);
   } catch (error) {
-    toast.error(error.message)
+    console.error("❌ fetchRooms error:", error); // ✅ Catch real reason
+    toast.error(error.message || "Failed to fetch rooms");
   }
-}
+};
+
 
 
 const fetchUser = async () => {

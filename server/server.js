@@ -26,7 +26,6 @@ const allowedOrigins = [
   "https://roomzy098.vercel.app"
 ];
 
-// ✅ Setup main CORS middleware
 const corsOptions = {
   origin: function (origin, callback) {
     if (!origin || allowedOrigins.includes(origin)) {
@@ -37,10 +36,10 @@ const corsOptions = {
   },
   credentials: true,
 };
-app.use(cors(corsOptions));
 
-// ✅ 🔥 FIX: Handle CORS preflight OPTIONS requests (to prevent 401 before auth)
-app.options("*", cors(corsOptions));
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions)); // ✅ preflight fix
+
 
 // Required middlewares
 app.use(cookieParser());
