@@ -12,56 +12,53 @@ import roomRouter from "./routes/roomRoutes.js";
 import bookingRouter from "./routes/bookingRoutes.js";
 import cookieParser from 'cookie-parser';
 
-// Connect DB & Cloudinary
 connectDB();
 connectCloudinary();
 
 const PORT = process.env.PORT || 3000;
+
 const app = express();
 
-// ✅ Define allowed origins
-const allowedOrigins = [
-  'http://localhost:5173',
-  'https://roomzy098.vercel.app',
-  'https://roomzy-hotel-booking-frontend-manhiks-projects.vercel.app'
-];
+// ✅ MANUAL CORS FIX (🔥 required on Vercel serverless)
+app.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', 'http://localhost:5173'); // Change if needed
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
 
-// ✅ Configure CORS
-const corsOptions = {
-  origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  credentials: true
-};
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
 
-app.use(cors(corsOptions));
-app.options('*', cors(corsOptions)); // ← Handle pre-flight requests properly
+  next();
+});
 
-// ✅ Middlewares
+// Optional: keep the cors middleware for local dev consistency
+app.use(cors({
+  origin: [
+    'http://localhost:5173',
+    'https://roomzy098.vercel.app'
+  ],
+  credentials: true,
+}));
+
 app.use(cookieParser());
 app.use(express.json());
+app.use(clerkMiddleware());
 
-// ✅ Public route
+// Clerk webhooks
+app.use("/api/clerk", clerkWebhooks);
+
+// Routes
 app.get('/', (req, res) => {
   res.send("working hurr");
 });
 
-// ✅ Webhook (public)
-app.use("/api/clerk", clerkWebhooks);
+app.use('/api/user', userRouter);
+app.use('/api/hotels', hotelRouter);
+app.use('/api/rooms', roomRouter);
+app.use('/api/bookings', bookingRouter);
 
-// ✅ Protected routes
-app.use("/api/user", clerkMiddleware(), userRouter);
-app.use("/api/bookings", clerkMiddleware(), bookingRouter);
-
-// ✅ Public routes
-app.use("/api/hotels", hotelRouter);
-app.use("/api/rooms", roomRouter);
-
-// ✅ Start server
 app.listen(PORT, () => {
   console.log(`server is running on port ${PORT}`);
 });
