@@ -19,9 +19,10 @@ const PORT= process.env.PORT || 3000;
 
 const app= express();
 app.use(cors({
-  origin: 'http://localhost:5173', // frontend URL
-  credentials: true
-}));       // Allow backend to connect with any frontend. cross-origin resource sharing
+  origin: ['http://localhost:5173', 'https://roomzy099.vercel.app'],
+  credentials: true, // if using cookies/auth
+}));
+
 
 
 //Middleware
