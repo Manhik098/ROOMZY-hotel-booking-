@@ -21,8 +21,7 @@ const app = express();
 
 app.use(cors({
   origin: [
-    'http://localhost:5173',
-    'https://roomzy098.vercel.app',
+    'http://localhost:3000'
   ],
   credentials: true
 }));
