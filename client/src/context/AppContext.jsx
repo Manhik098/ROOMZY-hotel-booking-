@@ -12,8 +12,6 @@ import { toast } from "react-hot-toast";
 
 // Set Axios base URL
 axios.defaults.baseURL = import.meta.env.VITE_BACKEND_URL;
-axios.defaults.withCredentials = true; // ✅ ADD THIS LINE
-
 
 const AppContext = createContext();
 
@@ -31,24 +29,16 @@ export const AppProvider = ({ children }) => {
 
   const fetchRooms = async () => {
   try {
-    const token = await getToken();
-    console.log("👉 Token:", token); // ✅ Add this
-
-    const { data } = await axios.get("/api/rooms", {
-      headers: {
-        Authorization: `Bearer ${token}`, // ✅ Add only if token exists
-      },
-      withCredentials: true,
-    });
-
-    console.log("✅ Got rooms:", data);
-    setRooms(data.rooms);
+    const { data } = await axios.get('/api/rooms')
+    if (data.success) {
+      setRooms(data.rooms)
+    } else {
+      toast.error(data.message)
+    }
   } catch (error) {
-    console.error("❌ fetchRooms error:", error); // ✅ Catch real reason
-    toast.error(error.message || "Failed to fetch rooms");
+    toast.error(error.message)
   }
-};
-
+}
 
 
 const fetchUser = async () => {

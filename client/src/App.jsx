@@ -1,8 +1,8 @@
 import React from "react";
-import { Route, Routes, useLocation } from "react-router-dom";
 import Navbar from "./components/Navbar";
-import Footer from "./components/Footer";
 import Home from "./pages/Home";
+import { Route, Routes, useLocation } from "react-router-dom";
+import Footer from "./components/Footer";
 import AllRooms from "./pages/AllRooms";
 import RoomDetails from "./pages/RoomDetails";
 import MyBookings from "./pages/MyBookings";
@@ -13,21 +13,15 @@ import AddRoom from "./pages/hotelOwner/AddRoom";
 import ListRoom from "./pages/hotelOwner/ListRoom";
 import { Toaster } from "react-hot-toast";
 import { useAppContext } from "./context/AppContext";
-import axios from "axios";
-
-// ✅ Global Axios config to support credentials + baseURL if needed
-axios.defaults.withCredentials = true;
-// axios.defaults.baseURL = "https://your-backend-url.vercel.app"; // optional if you're using relative paths
 
 const App = () => {
-  const location = useLocation();
-  const isOwnerPath = location.pathname.startsWith("/owner");
+  const isownerpath = useLocation().pathname.includes("owner");
   const { showHotelReg } = useAppContext();
 
   return (
     <>
       <Toaster />
-      {!isOwnerPath && <Navbar />}
+      {!isownerpath && <Navbar />}
       {showHotelReg && <HotelReg />}
       <div className="min-h-[70vh]">
         <Routes>
