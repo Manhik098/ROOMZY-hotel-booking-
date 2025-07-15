@@ -21,13 +21,13 @@ connectCloudinary();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// ✅ USE THIS CORS SETUP (delete your old custom one)
 const allowedOrigins = [
   "http://localhost:5173",
   "https://roomzy098.vercel.app"
 ];
 
-app.use(cors({
+// ✅ Setup main CORS middleware
+const corsOptions = {
   origin: function (origin, callback) {
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
@@ -36,16 +36,18 @@ app.use(cors({
     }
   },
   credentials: true,
-}));
+};
+app.use(cors(corsOptions));
 
-// 🔑 Required for session tokens/cookies
+// ✅ 🔥 FIX: Handle CORS preflight OPTIONS requests (to prevent 401 before auth)
+app.options("*", cors(corsOptions));
+
+// Required middlewares
 app.use(cookieParser());
 app.use(express.json());
-
-// ✅ Clerk middleware (must come before protected routes)
 app.use(clerkMiddleware());
 
-// 👇 Routes
+// Routes
 app.get("/", (req, res) => {
   res.send("working hurr");
 });
@@ -56,7 +58,7 @@ app.use("/api/hotels", hotelRouter);
 app.use("/api/rooms", roomRouter);
 app.use("/api/bookings", bookingRouter);
 
-// ✅ Vercel doesn't need app.listen (only for local dev)
+// ✅ Vercel doesn’t need listen; use only locally
 if (process.env.NODE_ENV !== "production") {
   app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
