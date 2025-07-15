@@ -1,67 +1,51 @@
 import express from "express";
-import dotenv from "dotenv";
+import dotenv from 'dotenv';
+dotenv.config();
 import cors from "cors";
-import cookieParser from "cookie-parser";
-
 import connectDB from "./configs/db.js";
-import connectCloudinary from "./configs/cloudinary.js";
-
-import { clerkMiddleware } from "@clerk/express";
+import { clerkMiddleware } from '@clerk/express';
 import clerkWebhooks from "./controllers/clerkWebHooks.js";
-
 import userRouter from "./routes/userRoutes.js";
 import hotelRouter from "./routes/hotelRoutes.js";
+import connectCloudinary from "./configs/cloudinary.js";
 import roomRouter from "./routes/roomRoutes.js";
 import bookingRouter from "./routes/bookingRoutes.js";
+import cookieParser from 'cookie-parser';
 
-dotenv.config();
 connectDB();
 connectCloudinary();
 
-const app = express();
 const PORT = process.env.PORT || 3000;
 
-const allowedOrigins = [
-  "http://localhost:5173",
-  "https://roomzy098.vercel.app"
-];
+const app = express();
 
-const corsOptions = {
-  origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error("Not allowed by CORS"));
-    }
-  },
-  credentials: true,
-};
+app.use(cors({
+  origin: [
+    'http://localhost:5173',
+    'https://roomzy098.vercel.app',
+  ],
+  credentials: true
+}));
 
-app.use(cors(corsOptions));
-app.options("*", cors(corsOptions)); // ✅ preflight fix
-
-
-// Required middlewares
 app.use(cookieParser());
 app.use(express.json());
-app.use(clerkMiddleware());
 
-// Routes
-app.get("/", (req, res) => {
-  res.send("working hurr");
+// ✅ Public route — no auth middleware
+app.get('/', (req, res) => {
+  res.send("working hurr ");
 });
 
+// ✅ Webhook route — no auth middleware
 app.use("/api/clerk", clerkWebhooks);
-app.use("/api/user", userRouter);
+
+// ✅ Apply Clerk auth middleware only to protected routes
+app.use("/api/user", clerkMiddleware(), userRouter);
+app.use("/api/bookings", clerkMiddleware(), bookingRouter);
+
+// ✅ Public routes — no auth middleware
 app.use("/api/hotels", hotelRouter);
 app.use("/api/rooms", roomRouter);
-app.use("/api/bookings", bookingRouter);
 
-// ✅ Vercel doesn’t need listen; use only locally
-if (process.env.NODE_ENV !== "production") {
-  app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-  });
-}
-
-export default app;
+app.listen(PORT, () => {
+  console.log(`server is running on port ${PORT}`);
+});
