@@ -12,6 +12,8 @@ import { toast } from "react-hot-toast";
 
 // Set Axios base URL
 axios.defaults.baseURL = import.meta.env.VITE_BACKEND_URL;
+axios.defaults.withCredentials = true; // ✅ ADD THIS LINE
+
 
 const AppContext = createContext();
 

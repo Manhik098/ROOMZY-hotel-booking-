@@ -19,9 +19,17 @@ const PORT = process.env.PORT || 3000;
 
 const app = express();
 
-// ✅ MANUAL CORS FIX (🔥 required on Vercel serverless)
+// ✅ Dynamic CORS for Vercel
+const allowedOrigins = [
+  'http://localhost:5173',
+  'https://roomzy098.vercel.app'
+];
+
 app.use((req, res, next) => {
-  res.setHeader('Access-Control-Allow-Origin', 'http://localhost:5173'); // Change if needed
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  }
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   res.setHeader('Access-Control-Allow-Credentials', 'true');
@@ -32,15 +40,6 @@ app.use((req, res, next) => {
 
   next();
 });
-
-// Optional: keep the cors middleware for local dev consistency
-app.use(cors({
-  origin: [
-    'http://localhost:5173',
-    'https://roomzy098.vercel.app'
-  ],
-  credentials: true,
-}));
 
 app.use(cookieParser());
 app.use(express.json());
