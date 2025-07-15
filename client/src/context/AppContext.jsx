@@ -31,7 +31,10 @@ export const AppProvider = ({ children }) => {
 
   const fetchRooms = async () => {
   try {
-    const { data } = await axios.get('/api/rooms')
+    const token = await getToken();
+    const { data } = await axios.get("/api/rooms", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
     if (data.success) {
       setRooms(data.rooms)
     } else {
