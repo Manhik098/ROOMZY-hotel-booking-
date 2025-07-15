@@ -21,23 +21,22 @@ connectCloudinary();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// ✅ Allow frontend domain for CORS
+// ✅ USE THIS CORS SETUP (delete your old custom one)
 const allowedOrigins = [
   "http://localhost:5173",
   "https://roomzy098.vercel.app"
 ];
 
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  if (allowedOrigins.includes(origin)) {
-    res.setHeader("Access-Control-Allow-Origin", origin);
-  }
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
-  res.setHeader("Access-Control-Allow-Credentials", "true");
-  if (req.method === "OPTIONS") return res.sendStatus(200);
-  next();
-});
+app.use(cors({
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+  credentials: true,
+}));
 
 // 🔑 Required for session tokens/cookies
 app.use(cookieParser());
