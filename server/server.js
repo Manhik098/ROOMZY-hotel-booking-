@@ -12,7 +12,7 @@ import roomRouter from "./routes/roomRoutes.js";
 import bookingRouter from "./routes/bookingRoutes.js";
 
 
-connectDB()
+await connectDB()
 connectCloudinary()
 
 const PORT= process.env.PORT || 3000;
